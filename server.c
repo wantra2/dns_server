@@ -1,6 +1,8 @@
 #include <sys/types.h> // Sockets-ish
 #include <sys/socket.h> // Sockets
+
 #include <netdb.h> // addrinfo
+#include <netinet/in.h>
 
 #include <stdio.h> // printf
 
@@ -12,29 +14,12 @@
 
 int main(void)
 {
-    struct addrinfo hints, *res = NULL;
+    struct sockaddr_in addr;
 
-    hints.ai_family = AF_UNSPEC;
-    hints.ai_socktype = SOCK_STREAM;
-    hints.ai_protocol = 0;
-    hints.ai_flags = AI_PASSIVE;
-
-    int getaddr_ret = getaddrinfo(NULL, "6666", &hints, &res);
-    if (getaddr_ret || res == NULL)
-    {
-        printf("getaddrinfo\n");
-        return -1;
-    }
-
-    int sockfd = socket(res->ai_family, res->ai_socktype, res->ai_protocol);
-    if (sockfd < 0)
-    {
-        printf("NOK, %d\n", sockfd);
-        return -1;
-    }
+    int sockfd = socket(AF_INET, SOCK_STREAM, 0);
 
     int optval = 1;
-    if (setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT,
+    if (setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR,
                    &optval, sizeof(optval)))
 
     {
@@ -42,12 +27,15 @@ int main(void)
         return -1;
     }
 
-    if (bind(sockfd, res->ai_addr, res->ai_addrlen) < 0)
+    addr.sin_port = htons(6666);
+    addr.sin_addr.s_addr = INADDR_ANY;
+    addr.sin_family = AF_INET;
+
+    if (bind(sockfd, (struct sockaddr*)&addr, sizeof(addr)))
     {
         printf("bind\n");
         return -1;
     }
-    freeaddrinfo(res);
 
     if (listen(sockfd, 3))
     {
