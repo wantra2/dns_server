@@ -8,6 +8,5 @@ add_executable(dns_server main.c
         parse_request/parse_request.c parse_request/parse_request.h
         server/server.c server/server.h
         make_response/make_response.c make_response/make_response.h
+        server/serv_helpers.c server/serv_helpers.h
         parse_zonefile/zone.c parse_zonefile/zone.h)
-
-

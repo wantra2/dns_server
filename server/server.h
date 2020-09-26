@@ -23,14 +23,10 @@
 
 #include <netdb.h>
 
+#include "serv_helpers.h"
+
 #define MAX_CONNECTIONS 20
 #define UDP_MAX_PAYLOAD 512
-
-int prep_tcp(int port);
-
-int prep_udp(int port);
-
-int tmax(int a, int b, int c);
 
 int fds_init(fd_set* readfds, int sockfd, int udpfd, int* fd_clients,
              int nb_clients);
