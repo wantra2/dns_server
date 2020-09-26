@@ -46,10 +46,30 @@ int prep_tcp(int port)
     return sockfd;
 }
 
-int fds_init(fd_set* readfds, int sockfd, int* fd_clients, int nb_clients) // Returns the new found fd_max
+int prep_udp(int port)
+{
+
+    int udpfd = socket(AF_INET6, SOCK_DGRAM, 0);
+    struct sockaddr_in6 addr;
+    addr.sin6_family = AF_INET6;
+    addr.sin6_port = htons(port);
+    addr.sin6_addr = in6addr_any;
+    addr.sin6_flowinfo = 0;
+    addr.sin6_scope_id = 0;
+    if (bind(udpfd, (struct sockaddr*)&addr,sizeof(struct sockaddr_in6)))
+    {
+        printf("udp bind error\n");
+        return -1;
+    }
+
+    return udpfd;
+}
+
+int fds_init(fd_set* readfds, int sockfd, int udpfd, int* fd_clients, int nb_clients) // Returns the new found fd_max
 {
     FD_ZERO(readfds);
     FD_SET(sockfd, readfds);
+    FD_SET(udpfd, readfds);
     int fd_max = sockfd;
 
     for (int i = 0; fd_clients[i] != 0 && i < nb_clients; i++)
@@ -129,6 +149,8 @@ int main(int argc, char** argv)
 
     int sockfd = prep_tcp(port); // Prepares and binds the TCP socket for IPv4/6
 
+    int udpfd = prep_udp(port);
+
     if (listen(sockfd, MAX_CONNECTIONS)!=0)
     {
         fprintf(stderr, "Listen failed\n");
@@ -144,7 +166,7 @@ int main(int argc, char** argv)
     while (1)
     {
 
-        fd_max = fds_init(readfds, sockfd, fd_clients, nb_clients);
+        fd_max = fds_init(readfds, sockfd, udpfd, fd_clients, nb_clients);
 
         if (select(fd_max + 1, readfds, NULL, NULL, NULL) == -1)
         {
