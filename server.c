@@ -11,11 +11,10 @@
 #include <errno.h>
 #include <string.h>
 
-int prep_tcp(int domain, int port)
+int prep_tcp(int port)
 {
-    struct sockaddr_in addr;
 
-    int sockfd = socket(domain, SOCK_STREAM, 0);
+    int sockfd = socket(AF_INET6, SOCK_STREAM, 0);
 
     int optval = 1;
     if (setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR,
@@ -26,15 +25,20 @@ int prep_tcp(int domain, int port)
         return -1;
     }
 
-    addr.sin_port = htons(port);
-    addr.sin_addr.s_addr = INADDR_ANY;
-    addr.sin_family = AF_INET;
 
-    if (bind(sockfd, (struct sockaddr*)&addr, sizeof(addr)))
+    struct sockaddr_in6 addr;
+
+    addr.sin6_family = AF_INET6;
+    addr.sin6_port = htons(port);
+    addr.sin6_addr = in6addr_any;
+    addr.sin6_flowinfo = 0;
+    addr.sin6_scope_id = 0;
+    if (bind(sockfd, (struct sockaddr*)&addr,sizeof(struct sockaddr_in6)))
     {
         printf("bind\n");
         return -1;
     }
+
     return sockfd;
 }
 
@@ -47,7 +51,12 @@ int main(int argc, char** argv)
 
     char *endptr;
     int port = strtol(argv[1], &endptr, 10);
-    int sockfd = prep_tcp(AF_INET, port);
+    if (errno == ERANGE || errno == EINVAL || port == 0)
+    {
+        fprintf(stderr, "Incorrect port given : %s\n", argv[1]);
+        return -1;
+    }
+    int sockfd = prep_tcp(port);
 
     if (listen(sockfd, 1))
     {
