@@ -35,4 +35,8 @@ int handle_connection(int sockfd, fd_set* readfds, int* fd_clients, int nb_clien
 
 int loop_clients(fd_set* readfds, int* fd_clients, int nb_clients);
 
+int tcp_rec_wrapper(int fd, char* buf, size_t bufsize);
+
+int udp_rec_wrapper(char* buf, size_t bufsize);
+
 #endif //DNS_SERVER_SERVER_H

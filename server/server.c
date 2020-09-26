@@ -78,16 +78,30 @@ int loop_clients(fd_set* readfds, int* fd_clients, int nb_clients)
             continue;
         }
 
-        char buf[1024];
         ssize_t sz = 0;
-
-        while ((sz = read(fd_clients[i], &buf, 1023)) != 0)
+        char len[2] = {0};
+        sz = read(fd_clients[i], &len, 2);
+        swap(len, len+1);
+        short bufsize = (short)*len;
+        if (sz == -1)
         {
-            buf[sz] = 0;
-            printf("%s", buf);
-            if (buf[sz-1] == '\n')
-                break;
+            fprintf(stderr, "TCP, reading size failed\n");
+            return -1;
         }
+
+        char* buf = malloc(bufsize);
+
+        sz = read(fd_clients[i], buf, bufsize);
+        if (sz == -1)
+        {
+            fprintf(stderr, "TCP, reading query failed\n");
+            free(buf);
+            return -1;
+        }
+
+        tcp_rec_wrapper(fd_clients[i], buf, bufsize);
+        free(buf);
+
         if (!sz) {
             close(fd_clients[i]);
             nb_clients--;
@@ -95,4 +109,17 @@ int loop_clients(fd_set* readfds, int* fd_clients, int nb_clients)
         }
     }
     return nb_clients;
+}
+
+int tcp_rec_wrapper(int fd, char* buf, size_t bufsize)
+{
+    //CALL_FUNCTION
+    return 0 * fd * *buf * bufsize; // To avoid unused variable warning
+}
+
+int udp_rec_wrapper(char* buf, size_t bufsize)
+{
+    //CALL FUNCTION
+    return 0 * *buf * bufsize; // To avoid unused variable warning
+
 }
