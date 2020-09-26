@@ -6,6 +6,7 @@ int main(int argc, char** argv)
 {
     if (argc != 2)
     {
+        fprintf(stderr, "Need a port\n");
         return -1;
     }
 
@@ -16,35 +17,66 @@ int main(int argc, char** argv)
         fprintf(stderr, "Incorrect port given : %s\n", argv[1]);
         return -1;
     }
-    int sockfd = prep_tcp(port);
 
-    if (listen(sockfd, 1))
+    int sockfd = prep_tcp(port); // Prepares and binds the TCP socket for IPv4/6
+
+    int udpfd = prep_udp(port); // Prepares and binds the UDP socket for IPv4/6
+
+    if (listen(sockfd, MAX_CONNECTIONS)!=0)
     {
-        printf("listen\n");
+        fprintf(stderr, "Listen failed\n");
         return -1;
     }
 
-    int accepted = accept(sockfd, NULL, NULL);
-    if (accepted == -1)
+
+    int* fd_clients = calloc(MAX_CONNECTIONS, sizeof(int));
+    fd_set* readfds = malloc(sizeof(fd_set));
+    int fd_max = sockfd;
+    int nb_clients = 0;
+
+    while (1)
     {
-        return -1;
+
+        fd_max = fds_init(readfds, sockfd, udpfd, fd_clients, nb_clients);
+
+        if (select(fd_max + 1, readfds, NULL, NULL, NULL) == -1)
+        {
+            fprintf(stderr, "Select failed\n");
+            return -1;
+        }
+
+        if (FD_ISSET(sockfd, readfds))
+        {
+            nb_clients = handle_connection(sockfd, readfds, fd_clients,
+                                           nb_clients);
+            if (nb_clients == -1)
+            {
+                return -1;
+            }
+        }
+
+        if (FD_ISSET(udpfd, readfds))
+        {
+            char buf[1024];
+            ssize_t sz = read(udpfd, &buf, UDP_MAX_PAYLOAD);
+            if (sz < 0)
+            {
+                fprintf(stderr, "UDP read failed\n");
+                return -1;
+            }
+            buf[sz] = 0;
+            printf("%s\n", buf);
+        }
+        else
+        {
+            nb_clients = loop_clients(readfds, fd_clients, nb_clients);
+        }
     }
-    char buf[1024];
 
-    ssize_t test = 0;
-    while( (test = read(accepted, &buf, 1023)) == 0)
-    {
-        continue;
-    }
-    buf[test] = 0;
-
-    char *payload = buf + 2;
-
-    dns_header header;
-    dns_question question;
-    parse_query(payload, &header, &question);
+    free(fd_clients);
+    free(readfds);
+    close(udpfd);
     close(sockfd);
-    close(accepted);
 
     return 0;
 }
