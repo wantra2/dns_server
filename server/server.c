@@ -94,9 +94,11 @@ int fds_init(fd_set* readfds, int sockfd, int udpfd, int* fd_clients,
     return tmax(fd_max, sockfd, udpfd);
 }
 
-int handle_connection(int sockfd, fd_set* readfds, int* fd_clients, int nb_clients)
+int handle_connection(int sockfd, fd_set* readfds, int* fd_clients,
+                      int nb_clients)
 {
-    struct sockadrr_storage addr;
+    struct sockaddr_in6 addr;
+
     socklen_t addrlen = sizeof(struct sockaddr_storage);
     int accepted;
 
@@ -110,8 +112,8 @@ int handle_connection(int sockfd, fd_set* readfds, int* fd_clients, int nb_clien
     char port[NI_MAXSERV] = {0};
 
     int name_ret = getnameinfo((struct sockaddr *)&addr, addrlen,
-                         hoststr, sizeof(host),
-                         portstr, sizeof(port),
+                         host, sizeof(host),
+                         port, sizeof(port),
                          NI_NUMERICHOST | NI_NUMERICSERV);
     if (name_ret != 0)
     {
