@@ -72,3 +72,16 @@ int tmax(int a, int b, int c)
         return c;
     return b;
 }
+
+void swap(char* a, char* b)
+{
+    char tmp = *a;
+    *a = *b;
+    *b = tmp;
+}
+
+
+int resp_tcp(int fd, char* buf, size_t bufsize)
+{
+    return send(fd, buf, bufsize, MSG_CONFIRM);
+}
