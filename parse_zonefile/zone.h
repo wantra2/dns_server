@@ -1,12 +1,14 @@
 #pragma once
 
+#include <stdlib.h>
+
 enum record_type
 {
-    A = 0,
-    AAAA = 1,
-    CNAME = 2,
-    TXT = 3,
-    SOA = 4,
+    A = 1,
+    AAAA = 28,
+    CNAME = 5,
+    TXT = 16,
+    SOA = 6,
     ERROR = 5
 };
 
