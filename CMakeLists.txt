@@ -3,4 +3,4 @@ project(dns_server C)
 
 set(CMAKE_C_STANDARD 99)
 
-add_executable(dns_server main.c)
+add_executable(dns_server main.c parse_request/parse_request.c parse_request/parse_request.h)
