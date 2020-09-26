@@ -57,15 +57,14 @@ int main(int argc, char** argv)
 
         if (FD_ISSET(udpfd, readfds))
         {
-            char buf[1024];
+            char buf[UDP_MAX_PAYLOAD];
             ssize_t sz = read(udpfd, &buf, UDP_MAX_PAYLOAD);
             if (sz < 0)
             {
                 fprintf(stderr, "UDP read failed\n");
                 return -1;
             }
-            buf[sz] = 0;
-            printf("%s\n", buf);
+            udp_rec_wrapper(buf, sz);
         }
         if (!FD_ISSET(udpfd, readfds) && !FD_ISSET(sockfd, readfds))
         {

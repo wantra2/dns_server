@@ -99,7 +99,7 @@ int loop_clients(fd_set* readfds, int* fd_clients, int nb_clients)
             return -1;
         }
 
-        tcp_rec_wrapper(fd_clients[i], buf, bufsize);
+        tcp_rec_wrapper(fd_clients[i], buf, sz);
         free(buf);
 
         if (!sz) {
@@ -114,12 +114,18 @@ int loop_clients(fd_set* readfds, int* fd_clients, int nb_clients)
 int tcp_rec_wrapper(int fd, char* buf, size_t bufsize)
 {
     //CALL_FUNCTION
+
+    buf[bufsize] = 0; // Temporary
+    printf("%s\n", buf);
     return 0 * fd * *buf * bufsize; // To avoid unused variable warning
 }
 
 int udp_rec_wrapper(char* buf, size_t bufsize)
 {
     //CALL FUNCTION
+
+    buf[bufsize] = 0; // Temporary
+    printf("%s", buf);
     return 0 * *buf * bufsize; // To avoid unused variable warning
 
 }
