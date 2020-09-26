@@ -13,6 +13,8 @@
 #define RA_VALUE 0
 #define Z_VALUE 0
 
+#define TCP_BEFORE_FIELD_SIZE 16
+
 #define HEADER_LENGTH 12
 #define QUESTION_LENGTH 16
 #define AUTHORITY_LENGTH 16
@@ -49,22 +51,16 @@ typedef struct{
     char *rdata;
 }dns_response, dns_authority, dns_additional;
 
-typedef struct{
-    dns_header header;
-    char *data;
-}dns_pkt;
 
 void print_header(dns_header *dns_header);
 void print_question(dns_question *dns_question);
 void print_response(dns_response *dns_response);
 
-void print_pkt(dns_pkt *pkt);
 
 dns_header *init_dns_header();
 dns_question *init_dns_question();
 dns_response *init_dns_response();
 
-dns_question *parse_question(dns_pkt *pkt);
-dns_pkt *parse_query(void *data, dns_question *question);
+void parse_query(void *data, dns_header *dnsheader, dns_question *dnsquestion);
 
 #endif //DNS_SERVER_PARSE_REQUEST_H

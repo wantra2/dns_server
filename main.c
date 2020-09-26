@@ -37,14 +37,12 @@ int main(int argc, char** argv)
         continue;
     }
     buf[test] = 0;
-    dns_question question;
-    dns_pkt *pkt = parse_query(buf, &question);
-    printf("Header\n");
-    print_header(&pkt->header);
-    printf("Question\n");
-    print_question((dns_question *)pkt->data);
-    printf("%s", buf);
 
+    char *payload = buf + 2;
+
+    dns_header header;
+    dns_question question;
+    parse_query(payload, &header, &question);
     close(sockfd);
     close(accepted);
 

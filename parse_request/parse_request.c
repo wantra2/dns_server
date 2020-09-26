@@ -41,11 +41,15 @@ void print_response(dns_response *dns_response)
     printf("%s \n", dns_response->rdata);
 }
 
-dns_header *init_dns_header()
+dns_header *init_dns_header(void *data)
 {
     dns_header *header = calloc(1, sizeof(dns_header));
-    if (header == NULL)
-        return NULL;
+    memcpy(header, data, sizeof(dns_header));
+    header->id = ntohs(header->id);
+    header->qdcount = ntohs(header->qdcount);
+    header->ancount = ntohs(header->ancount);
+    header->nscount = ntohs(header->nscount);
+    header->arcount = ntohs(header->arcount);
     header->opcode = OPCODE_VALUE;
     header->aa = AA_VALUE;
     header->rd = RD_VALUE;
@@ -53,53 +57,30 @@ dns_header *init_dns_header()
     header->z = Z_VALUE;
     return header;
 }
-dns_question *init_dns_question()
+
+
+
+dns_question *init_dns_question(void *data)
 {
     dns_question *question = calloc(1, sizeof(dns_question));
-    return question;
-}
-dns_response *init_dns_response()
-{
-    dns_response *response = calloc(1, sizeof(dns_response));
-    return response;
-}
-
-dns_pkt *init_dns_pkt()
-{
-    dns_pkt *pkt = calloc(1, sizeof(dns_pkt));
-    if (pkt == NULL)
-        return NULL;
-    return pkt;
-}
-
-void *parse_header(dns_pkt *pkt, void *data)
-{
-    dns_header *header = init_dns_header();
-    memcpy(header, data, HEADER_LENGTH);
-    header->id = ntohs(header->id);
-    header->qdcount = ntohs(header->qdcount);
-    header->ancount = ntohs(header->ancount);
-    header->nscount = ntohs(header->nscount);
-    header->arcount = ntohs(header->arcount);
-    pkt->header = *header;
-    return ((char *)data) + HEADER_LENGTH;
-}
-
-dns_question *parse_question(dns_pkt *pkt)
-{
-    dns_question *question = init_dns_question();
-    question = (dns_question *)pkt->data;
+    question->qname = ((char *)data) + HEADER_LENGTH;
+    question->qtype = *((uint16_t *)(question->qname + strlen(question->qname) + 1));
+    question->qclass = *((uint16_t *)(question->qname + strlen(question->qname) + 1 + 16));
+    question->qtype = ntohs(question->qtype);
+    question->qclass = ntohs(question->qclass);
     return question;
 }
 
-
-dns_pkt *parse_query(void *data, dns_question *question)
+void parse_query(void *data, dns_header *dnsheader, dns_question *dnsquestion)
 {
-    dns_pkt *pkt = init_dns_pkt();
-    void *query_question = parse_header(pkt, data);
-    if (pkt->header.qdcount)
-        question = query_question;
-    return pkt;
+    dns_header *header = init_dns_header(data);
+    dnsheader = header;
+    if (header->qdcount == 0) {
+        printf("NO QUESTION\n");
+        return;
+    }
+    dns_question *question = init_dns_question(data);
+    dnsquestion = question;
 }
 
 
