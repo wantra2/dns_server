@@ -11,6 +11,10 @@
 #include <errno.h>
 #include <string.h>
 
+#include <sys/select.h>
+
+#define MAX_CONNECTIONS 10
+
 int prep_tcp(int port)
 {
 
@@ -42,6 +46,72 @@ int prep_tcp(int port)
     return sockfd;
 }
 
+int fds_init(fd_set* readfds, int sockfd, int* fd_clients, int nb_clients) // Returns the new found fd_max
+{
+    FD_ZERO(readfds);
+    FD_SET(sockfd, readfds);
+    int fd_max = sockfd;
+
+    for (int i = 0; fd_clients[i] != 0 && i < nb_clients; i++)
+    {
+        int client_fd = fd_clients[i];
+        FD_SET(client_fd, readfds);
+        if (client_fd > fd_max)
+        {
+            fd_max = client_fd;
+        }
+    }
+    return fd_max;
+}
+
+int handle_connection(int sockfd, fd_set* readfds, int* fd_clients, int nb_clients)
+{
+    int accepted;
+    if ((accepted = accept(sockfd, NULL, NULL)) == -1)
+    {
+        fprintf(stderr, "Accept failed\n");
+        return -1;
+    }
+    printf("New Connection\n");
+    FD_SET(accepted, readfds);
+    int i = 0;
+    for (; i < nb_clients && fd_clients[i]; i++)
+    {
+        continue;
+    }
+    fd_clients[i] = accepted;
+    return ++nb_clients;
+}
+
+int loop_clients(fd_set* readfds, int* fd_clients, int nb_clients)
+{
+    for (int i = 0; i < nb_clients; i++)
+    {
+        if (! FD_ISSET(fd_clients[i], readfds))
+        {
+            continue;
+        }
+
+        char buf[1024];
+        ssize_t sz = 0;
+
+        while ((sz = read(fd_clients[i], &buf, 1023)) != 0)
+        {
+            buf[sz] = 0;
+            printf("%s", buf);
+            if (buf[sz-1] == '\n')
+                break;
+        }
+        if (!sz) {
+            close(fd_clients[i]);
+            nb_clients--;
+            fd_clients[i] = 0;
+        }
+    }
+    return nb_clients;
+}
+
+
 int main(int argc, char** argv)
 {
     if (argc != 2)
@@ -56,34 +126,51 @@ int main(int argc, char** argv)
         fprintf(stderr, "Incorrect port given : %s\n", argv[1]);
         return -1;
     }
+
     int sockfd = prep_tcp(port); // Prepares and binds the TCP socket for IPv4/6
 
-    if (listen(sockfd, 10)==0)
+    if (listen(sockfd, MAX_CONNECTIONS)!=0)
     {
-        printf("Listening\n");
-    }
-    else
-    {
-        return -1;
-    }
-    int accepted = accept(sockfd, NULL, NULL);
-    if (accepted == -1)
-    {
+        fprintf(stderr, "Listen failed\n");
         return -1;
     }
 
 
-    char buf[1024];
-    ssize_t sz = 0;
+    int* fd_clients = calloc(MAX_CONNECTIONS, sizeof(int));
+    fd_set* readfds = malloc(sizeof(fd_set));
+    int fd_max = sockfd;
+    int nb_clients = 0;
 
-    while ((sz = read(accepted, &buf, 1023)) != 0)
+    while (1)
     {
-        buf[sz] = 0;
-        printf("%s\t%ld", buf, sz);
+
+        fd_max = fds_init(readfds, sockfd, fd_clients, nb_clients);
+
+        if (select(fd_max + 1, readfds, NULL, NULL, NULL) == -1)
+        {
+            fprintf(stderr, "Select failed\n");
+            return -1;
+        }
+
+        if (FD_ISSET(sockfd, readfds))
+        {
+            nb_clients = handle_connection(sockfd, readfds, fd_clients,
+                                           nb_clients);
+            if (nb_clients == -1)
+            {
+                return -1;
+            }
+;
+        }
+        else
+        {
+            nb_clients = loop_clients(readfds, fd_clients, nb_clients);
+        }
+
     }
 
-
-    close(accepted);
+    free(fd_clients);
+    free(readfds);
     close(sockfd);
 
 
