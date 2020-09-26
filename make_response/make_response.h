@@ -6,6 +6,7 @@
 #define DNS_SERVER_MAKE_RESPONSE_H
 
 #include <stdint.h>
+#include "../parse_request/parse_request.h"
 
 typedef struct{
     char *name;
@@ -15,5 +16,11 @@ typedef struct{
     uint16_t  rdlength;
     char *rdata;
 }dns_response;
+
+typedef struct{
+    dns_header header;
+    dns_question question;
+    char *data;
+}dns_packet;
 
 #endif //DNS_SERVER_MAKE_RESPONSE_H

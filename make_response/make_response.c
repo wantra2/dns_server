@@ -14,3 +14,4 @@ void print_response(dns_response *dns_response)
     printf("%d \n", dns_response->rdlength);
     printf("%s \n", dns_response->rdata);
 }
+
