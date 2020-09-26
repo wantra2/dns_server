@@ -64,16 +64,15 @@ dns_response *init_dns_response()
     return response;
 }
 
-dns_pkt *init_dns_pkt(size_t size)
+dns_pkt *init_dns_pkt()
 {
     dns_pkt *pkt = calloc(1, sizeof(dns_pkt));
     if (pkt == NULL)
         return NULL;
-    pkt->data = calloc(size, sizeof(char));
     return pkt;
 }
 
-void parse_header(dns_pkt *pkt, void *data)
+void *parse_header(dns_pkt *pkt, void *data)
 {
     dns_header *header = init_dns_header();
     memcpy(header, data, HEADER_LENGTH);
@@ -83,6 +82,7 @@ void parse_header(dns_pkt *pkt, void *data)
     header->nscount = ntohs(header->nscount);
     header->arcount = ntohs(header->arcount);
     pkt->header = *header;
+    return ((char *)data) + HEADER_LENGTH;
 }
 
 dns_question *parse_question(dns_pkt *pkt)
@@ -93,15 +93,12 @@ dns_question *parse_question(dns_pkt *pkt)
 }
 
 
-dns_pkt *parse_query(void *data, dns_question *question, size_t pkt_size)
+dns_pkt *parse_query(void *data, dns_question *question)
 {
-    dns_pkt *pkt = init_dns_pkt(pkt_size);
-
-    parse_header(pkt, data);
-    memcpy(pkt->data, ((char *)data) + HEADER_LENGTH, pkt_size - HEADER_LENGTH);
-    if (pkt->header.qdcount == 1)
-        question = parse_question(pkt);
-    print_question(question);
+    dns_pkt *pkt = init_dns_pkt();
+    void *query_question = parse_header(pkt, data);
+    if (pkt->header.qdcount)
+        question = query_question;
     return pkt;
 }
 

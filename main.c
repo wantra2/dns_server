@@ -38,8 +38,11 @@ int main(int argc, char** argv)
     }
     buf[test] = 0;
     dns_question question;
-    dns_pkt *pkt = parse_query(buf, &question, test);
+    dns_pkt *pkt = parse_query(buf, &question);
+    printf("Header\n");
     print_header(&pkt->header);
+    printf("Question\n");
+    print_question((dns_question *)pkt->data);
     printf("%s", buf);
 
     close(sockfd);

@@ -65,6 +65,6 @@ dns_question *init_dns_question();
 dns_response *init_dns_response();
 
 dns_question *parse_question(dns_pkt *pkt);
-dns_pkt *parse_query(void *data, dns_question *question, size_t size);
+dns_pkt *parse_query(void *data, dns_question *question);
 
 #endif //DNS_SERVER_PARSE_REQUEST_H
