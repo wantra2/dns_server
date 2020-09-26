@@ -56,31 +56,36 @@ int main(int argc, char** argv)
         fprintf(stderr, "Incorrect port given : %s\n", argv[1]);
         return -1;
     }
-    int sockfd = prep_tcp(port);
+    int sockfd = prep_tcp(port); // Prepares and binds the TCP socket for IPv4/6
 
-    if (listen(sockfd, 1))
+    if (listen(sockfd, 10)==0)
     {
-        printf("listen\n");
+        printf("Listening\n");
+    }
+    else
+    {
         return -1;
     }
-
     int accepted = accept(sockfd, NULL, NULL);
     if (accepted == -1)
     {
         return -1;
     }
+
+
     char buf[1024];
+    ssize_t sz = 0;
 
-    ssize_t test = 0;
-    while( (test = read(accepted, &buf, 1023)) == 0)
+    while ((sz = read(accepted, &buf, 1023)) != 0)
     {
-        continue;
+        buf[sz] = 0;
+        printf("%s\t%ld", buf, sz);
     }
-    buf[test] = 0;
-    printf("%s", buf);
 
-    close(sockfd);
+
     close(accepted);
+    close(sockfd);
+
 
     return 0;
 }
