@@ -358,20 +358,4 @@ struct record_list *create_record_list(char *filename)
     return list;
 }
 
-int main()
-{
-    struct record_list *list = create_record_list("filer");
-    struct record_list *tmp = list;
-    while (tmp->next)
-    {
-        printf("%s %d %ld %s\n", tmp->node->domain_name, tmp->node->type, tmp->node->ttl, tmp->node->content);
-        if (tmp->node->soa)
-        {
-            printf("%s %s %ld %ld %ld %ld %ld\n", tmp->node->soa->mname, tmp->node->soa->rname, tmp->node->soa->serial, tmp->node->soa->refresh, tmp->node->soa->retry, tmp->node->soa->expire, tmp->node->soa->minimum_ttl);
-        }
-        tmp = tmp->next;
-    }
-    printf("%s %d %ld %s\n", tmp->node->domain_name, tmp->node->type, tmp->node->ttl, tmp->node->content);
-    free_list(list);
-    return 0;
-}
+
