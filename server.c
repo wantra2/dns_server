@@ -44,7 +44,9 @@ int main(int argc, char** argv)
     {
         return -1;
     }
-    int port = atoi(argv[1]);
+
+    char *endptr;
+    int port = strtol(argv[1], &endptr, 10);
     int sockfd = prep_tcp(AF_INET, port);
 
     if (listen(sockfd, 1))
