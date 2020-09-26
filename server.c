@@ -65,7 +65,23 @@ int prep_udp(int port)
     return udpfd;
 }
 
-int fds_init(fd_set* readfds, int sockfd, int udpfd, int* fd_clients, int nb_clients) // Returns the new found fd_max
+int tmax(int a, int b, int c)
+{
+    if (a > b)
+    {
+        if (a > c)
+            return a;
+        if (c > b)
+            return c;
+    }
+    if (c > b)
+        return c;
+    return b;
+}
+
+int fds_init(fd_set* readfds, int sockfd, int udpfd, int* fd_clients,
+             int nb_clients)
+// Returns the new found fd_max
 {
     FD_ZERO(readfds);
     FD_SET(sockfd, readfds);
@@ -81,7 +97,7 @@ int fds_init(fd_set* readfds, int sockfd, int udpfd, int* fd_clients, int nb_cli
             fd_max = client_fd;
         }
     }
-    return fd_max;
+    return tmax(fd_max, sockfd, udpfd);
 }
 
 int handle_connection(int sockfd, fd_set* readfds, int* fd_clients, int nb_clients)
@@ -193,6 +209,20 @@ int main(int argc, char** argv)
             if (nb_clients == -1)
             {
                 return -1;
+            }
+        }
+
+        if (FD_ISSET(udpfd, readfds))
+        {
+            char buf[1024];
+            ssize_t sz = 0;
+
+            while ((sz = read(udpfd, &buf, 1023)) != 0)
+            {
+                buf[sz] = 0;
+                printf("%s", buf);
+                if (buf[sz-1] == '\n')
+                    break;
             }
         }
         else
