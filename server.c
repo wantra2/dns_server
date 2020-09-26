@@ -1,7 +1,6 @@
 #include <sys/types.h> // Sockets-ish
 #include <sys/socket.h> // Sockets
 
-#include <netdb.h> // addrinfo
 #include <netinet/in.h>
 
 #include <stdio.h> // printf
@@ -12,11 +11,11 @@
 #include <errno.h>
 #include <string.h>
 
-int main(void)
+int prep_tcp(int domain, int port)
 {
     struct sockaddr_in addr;
 
-    int sockfd = socket(AF_INET, SOCK_STREAM, 0);
+    int sockfd = socket(domain, SOCK_STREAM, 0);
 
     int optval = 1;
     if (setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR,
@@ -27,7 +26,7 @@ int main(void)
         return -1;
     }
 
-    addr.sin_port = htons(6666);
+    addr.sin_port = htons(port);
     addr.sin_addr.s_addr = INADDR_ANY;
     addr.sin_family = AF_INET;
 
@@ -36,8 +35,19 @@ int main(void)
         printf("bind\n");
         return -1;
     }
+    return sockfd;
+}
 
-    if (listen(sockfd, 3))
+int main(int argc, char** argv)
+{
+    if (argc != 2)
+    {
+        return -1;
+    }
+    int port = atoi(argv[1]);
+    int sockfd = prep_tcp(AF_INET, port);
+
+    if (listen(sockfd, 1))
     {
         printf("listen\n");
         return -1;
