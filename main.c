@@ -67,7 +67,7 @@ int main(int argc, char** argv)
             buf[sz] = 0;
             printf("%s\n", buf);
         }
-        else
+        if (!FD_ISSET(udpfd, readfds) && !FD_ISSET(sockfd, readfds))
         {
             nb_clients = loop_clients(readfds, fd_clients, nb_clients);
         }

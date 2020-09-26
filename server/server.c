@@ -4,16 +4,19 @@ int prep_tcp(int port)
 {
 
     int sockfd = socket(AF_INET6, SOCK_STREAM, 0);
+    if (sockfd == -1)
+    {
+        fprintf(stderr, "socket tcp failed\n");
+        return -1;
+    }
 
     int optval = 1;
     if (setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR,
                    &optval, sizeof(optval)))
-
     {
-        printf("setsockopt\n");
+        fprintf(stderr, "Setsockopt tcp failed\n");
         return -1;
     }
-
 
     struct sockaddr_in6 addr;
 
@@ -24,7 +27,7 @@ int prep_tcp(int port)
     addr.sin6_scope_id = 0;
     if (bind(sockfd, (struct sockaddr*)&addr,sizeof(struct sockaddr_in6)))
     {
-        printf("bind\n");
+        fprintf(stderr, "bind tcp failed\n");
         return -1;
     }
 
@@ -35,6 +38,12 @@ int prep_udp(int port)
 {
 
     int udpfd = socket(AF_INET6, SOCK_DGRAM, 0);
+    if (udpfd == -1)
+    {
+        fprintf(stderr, "socket udp failed\n");
+        return -1;
+    }
+
     struct sockaddr_in6 addr;
     addr.sin6_family = AF_INET6;
     addr.sin6_port = htons(port);
@@ -87,8 +96,8 @@ int fds_init(fd_set* readfds, int sockfd, int udpfd, int* fd_clients,
 
 int handle_connection(int sockfd, fd_set* readfds, int* fd_clients, int nb_clients)
 {
-    struct sockaddr_in addr;
-    socklen_t addrlen;
+    struct sockadrr_storage addr;
+    socklen_t addrlen = sizeof(struct sockaddr_storage);
     int accepted;
 
     if ((accepted = accept(sockfd, (struct sockaddr*)&addr, &addrlen)) == -1)
@@ -96,10 +105,23 @@ int handle_connection(int sockfd, fd_set* readfds, int* fd_clients, int nb_clien
         fprintf(stderr, "Accept failed\n");
         return -1;
     }
+
+    char host[NI_MAXHOST] = {0};
+    char port[NI_MAXSERV] = {0};
+
+    int name_ret = getnameinfo((struct sockaddr *)&addr, addrlen,
+                         hoststr, sizeof(host),
+                         portstr, sizeof(port),
+                         NI_NUMERICHOST | NI_NUMERICSERV);
+    if (name_ret != 0)
+    {
+        fprintf(stderr, "Getnameinfo failed\n");
+    }
+    printf("New connection from %s#%s\n", host, port);
+
     if (nb_clients >= MAX_CONNECTIONS)
     {
-        fprintf(stderr, "Too many open connections. Dropping this one, from %s:%d'n",
-                inet_ntoa(addr.sin_addr), ntohs(addr.sin_port));
+        fprintf(stderr, "Too many open connections. Dropping this one\n");
         if (shutdown(accepted, SHUT_RDWR) < 0)
         {
             fprintf(stderr, "Shutdown failed\n");
@@ -108,8 +130,6 @@ int handle_connection(int sockfd, fd_set* readfds, int* fd_clients, int nb_clien
         return nb_clients;
     }
 
-    printf("New Connection from %s:%d\n",
-                inet_ntoa(addr.sin_addr), ntohs(addr.sin_port));
     FD_SET(accepted, readfds);
     int i = 0;
     for (; i < nb_clients && fd_clients[i]; i++)
@@ -147,6 +167,3 @@ int loop_clients(fd_set* readfds, int* fd_clients, int nb_clients)
     }
     return nb_clients;
 }
-
-
-

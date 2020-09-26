@@ -21,6 +21,7 @@
 #include <sys/select.h>
 
 #include <arpa/inet.h>
+#include <netdb.h>
 
 #define MAX_CONNECTIONS 20
 #define UDP_MAX_PAYLOAD 512
