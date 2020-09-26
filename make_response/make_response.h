@@ -9,6 +9,15 @@
 #include "../parse_request/parse_request.h"
 #include "../parse_zonefile/zone.h"
 
+typedef enum{
+    NOERROR = 0,
+    FORMERROR = 1,
+    SERVFAIL = 2,
+    NXDOMAIN = 3,
+    NOTIMP = 4,
+    REFUSED = 5
+}rcode;
+
 typedef struct{
     char *name;
     uint16_t type;

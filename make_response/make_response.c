@@ -45,9 +45,18 @@ static void concat_soa(struct soa *soa, char r_data[256])
 dns_packet *make_response(dns_header *header, dns_question *question, struct soa *soa, struct record_list *records)
 {
     dns_packet *pkt = calloc(1, sizeof(dns_packet));
+
     pkt->header = *header;
     pkt->question = *question;
     pkt->data = malloc(1);
+
+    if (question->qtype != A && question->qtype != AAAA && question->qtype != CNAME
+        && question->qtype != TXT && question->qtype != SOA)
+    {
+        pkt->header.rcode = NOTIMP;
+        return pkt;
+    }
+
     int found = 0;
     char r_data[256];
     while (records)
