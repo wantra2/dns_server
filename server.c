@@ -13,7 +13,7 @@
 
 #include <sys/select.h>
 
-#define MAX_CONNECTIONS 10
+#define MAX_CONNECTIONS 20
 
 int prep_tcp(int port)
 {
@@ -92,6 +92,17 @@ int handle_connection(int sockfd, fd_set* readfds, int* fd_clients, int nb_clien
         fprintf(stderr, "Accept failed\n");
         return -1;
     }
+    if (nb_clients >= MAX_CONNECTIONS)
+    {
+        fprintf(stderr, "Too many open connections. Dropping this one..\n");
+        if (shutdown(accepted, SHUT_RDWR) < 0)
+        {
+            fprintf(stderr, "Shutdown failed\n");
+        }
+        close(accepted);
+        return nb_clients;
+    }
+
     printf("New Connection\n");
     FD_SET(accepted, readfds);
     int i = 0;
@@ -136,6 +147,7 @@ int main(int argc, char** argv)
 {
     if (argc != 2)
     {
+        fprintf(stderr, "Need a port\n");
         return -1;
     }
 
@@ -149,7 +161,7 @@ int main(int argc, char** argv)
 
     int sockfd = prep_tcp(port); // Prepares and binds the TCP socket for IPv4/6
 
-    int udpfd = prep_udp(port);
+    int udpfd = prep_udp(port); // Prepares and binds the UDP socket for IPv4/6
 
     if (listen(sockfd, MAX_CONNECTIONS)!=0)
     {
@@ -182,19 +194,17 @@ int main(int argc, char** argv)
             {
                 return -1;
             }
-;
         }
         else
         {
             nb_clients = loop_clients(readfds, fd_clients, nb_clients);
         }
-
     }
 
     free(fd_clients);
     free(readfds);
+    close(udpfd);
     close(sockfd);
-
 
     return 0;
 }
