@@ -16,6 +16,7 @@
 #include <stdlib.h> // malloc
 #include <unistd.h> // Read
 
+#include <err.h>
 #include <errno.h>
 #include <string.h>
 
@@ -34,9 +35,9 @@ int fds_init(fd_set* readfds, int sockfd, int udpfd, int* fd_clients,
 
 int handle_connection(int sockfd, fd_set* readfds, int* fd_clients, int nb_clients);
 
-int loop_clients(fd_set* readfds, int* fd_clients, int nb_clients);
+int loop_clients(fd_set* readfds, int* fd_clients, int nb_clients, struct record_list *records);
 
-int tcp_rec_wrapper(int fd, char* buf, size_t bufsize);
+int tcp_rec_wrapper(int fd, char* buf, struct record_list *records);
 
 int udp_rec_wrapper(struct sockaddr* addr, char* buf, struct record_list *records);
 

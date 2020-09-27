@@ -1,4 +1,6 @@
 #include <stdio.h>
+#include <err.h>
+
 #include "parse_request/parse_request.h"
 #include "server/server.h"
 #include "parse_zonefile/zone.h"
@@ -7,7 +9,7 @@ int main(int argc, char** argv)
 {
     if (argc != 3)
     {
-        fprintf(stderr, "Need a port/zone file\n");
+        fprintf(stderr, "Usage: dns_server port zonefile\n");
         return -1;
     }
 
@@ -23,7 +25,7 @@ int main(int argc, char** argv)
     int port = strtol(argv[1], &endptr, 10);
     if (errno == ERANGE || errno == EINVAL || port == 0)
     {
-        fprintf(stderr, "Incorrect port given : %s\n", argv[1]);
+        errx(-1, "Incorrect port given : %s\n", argv[1]);
         return -1;
     }
 
@@ -31,13 +33,16 @@ int main(int argc, char** argv)
 
     int udpfd = prep_udp(port); // Prepares and binds the UDP socket for IPv4/6
     if (sockfd < 0 || udpfd < 0)
-        return -1;
+    {
+        close(sockfd);
+        close(udpfd);
+        errx(-2, "Socket failed\n");
+    }
     udpfd = fd_save(udpfd);
 
     if (listen(sockfd, MAX_CONNECTIONS)!=0)
     {
-        fprintf(stderr, "Listen failed\n");
-        return -1;
+        errx(-2, "Listen failed\n");
     }
 
 
@@ -45,6 +50,7 @@ int main(int argc, char** argv)
     fd_set* readfds = malloc(sizeof(fd_set));
     int fd_max = sockfd;
     int nb_clients = 0;
+    free_all(sockfd, udpfd, readfds, fd_clients); // Initialisation
 
     while (1)
     {
@@ -53,18 +59,14 @@ int main(int argc, char** argv)
 
         if (select(fd_max + 1, readfds, NULL, NULL, NULL) == -1)
         {
-            fprintf(stderr, "Select failed\n");
-            return -1;
+            free_all(-1, -1, NULL, NULL);
+            errx(-2, "Select failed\n");
         }
 
         if (FD_ISSET(sockfd, readfds))
         {
             nb_clients = handle_connection(sockfd, readfds, fd_clients,
                                            nb_clients);
-            if (nb_clients == -1)
-            {
-                return -1;
-            }
         }
 
         if (FD_ISSET(udpfd, readfds))
@@ -72,8 +74,8 @@ int main(int argc, char** argv)
             char* buf = malloc(UDP_MAX_PAYLOAD);
             if (buf == NULL)
             {
-                fprintf(stderr, "malloc failed\n");
-                return -1;
+                free_all(-1, -1, NULL, NULL);
+                errx(-2, "malloc failed\n");
             }
 
             struct sockaddr_storage addr;
@@ -90,16 +92,16 @@ int main(int argc, char** argv)
             {
                 if (tmp_add < 0)
                 {
-                    perror(NULL);
-                    fprintf(stderr, "UDP read failed\n");
-                    return -1;
+                    free_all(-1, -1, NULL, NULL);
+                    free(buf);
+                    errx(-2, "UDP read failed\n");
                 }
                 sz += tmp_add;
                 i++;
                 if ((buf = realloc(buf, sz + UDP_MAX_PAYLOAD)) == NULL)
                 {
-                fprintf(stderr, "malloc failed\n");
-                return -1;
+                    free_all(-1, -1, NULL, NULL);
+                    errx(-2, "realloc failed\n");
                 }
             }
             sz += tmp_add;
@@ -108,14 +110,12 @@ int main(int argc, char** argv)
         }
         if (!FD_ISSET(udpfd, readfds) && !FD_ISSET(sockfd, readfds))
         {
-            nb_clients = loop_clients(readfds, fd_clients, nb_clients);
+            nb_clients = loop_clients(readfds, fd_clients, nb_clients, records);
         }
     }
 
-    free(fd_clients);
-    free(readfds);
-    close(udpfd);
-    close(sockfd);
+
+    free_all(-1, -1, NULL, NULL);
     free_list(records);
     return 0;
 }

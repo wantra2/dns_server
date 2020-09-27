@@ -1,5 +1,31 @@
 #include "serv_helpers.h"
 
+
+void free_all(int sockfd, int udpfd, fd_set* readfds, int* fd_clients)
+{
+    static int stk_sockfd = -1;
+    static int stk_udpfd = -1;
+    static fd_set* stk_readfds = NULL;
+    static int* stk_fd_clients = NULL;
+
+    if (stk_sockfd == -1 && sockfd != -1)
+        stk_sockfd = sockfd;
+    if (stk_udpfd == -1 && udpfd != -1)
+        stk_udpfd = udpfd;
+    if (stk_readfds == NULL &&  readfds!= NULL)
+        stk_readfds = readfds;
+    if (stk_fd_clients == NULL &&  fd_clients!= NULL)
+        stk_fd_clients = fd_clients;
+
+    if (sockfd == -1 && udpfd == -1 && readfds == NULL && fd_clients == NULL)
+    {
+        close(sockfd);
+        close(udpfd);
+        free(readfds);
+        free(fd_clients);
+    }
+}
+
 int fd_save(int fd)
 {
     static int stk_fd = -1;

@@ -33,8 +33,8 @@ int handle_connection(int sockfd, fd_set* readfds, int* fd_clients,
 
     if ((accepted = accept(sockfd, (struct sockaddr*)&addr, &addrlen)) == -1)
     {
-        fprintf(stderr, "Accept failed\n");
-        return -1;
+        free_all(-1, -1, NULL, NULL);
+        errx(-2, "Accept failed\n");
     }
 
     char host[NI_MAXHOST] = {0};
@@ -72,7 +72,7 @@ int handle_connection(int sockfd, fd_set* readfds, int* fd_clients,
     return ++nb_clients;
 }
 
-int loop_clients(fd_set* readfds, int* fd_clients, int nb_clients)
+int loop_clients(fd_set* readfds, int* fd_clients, int nb_clients, struct record_list *records)
 {
     for (int i = 0; i < nb_clients; i++)
     {
@@ -88,7 +88,8 @@ int loop_clients(fd_set* readfds, int* fd_clients, int nb_clients)
         short bufsize = (short)*len;
         if (sz == -1)
         {
-            fprintf(stderr, "TCP, reading size failed\n");
+            free_all(-1, -1, NULL, NULL);
+            errx(-2, "TCP, reading size failed\n");
             return -1;
         }
 
@@ -97,12 +98,12 @@ int loop_clients(fd_set* readfds, int* fd_clients, int nb_clients)
         sz = read(fd_clients[i], buf, bufsize);
         if (sz == -1)
         {
-            fprintf(stderr, "TCP, reading query failed\n");
+            free_all(-1, -1, NULL, NULL);
             free(buf);
-            return -1;
+            errx(-2, "TCP, reading query failed\n");
         }
 
-        tcp_rec_wrapper(fd_clients[i], buf, sz);
+        tcp_rec_wrapper(fd_clients[i], buf, records);
         free(buf);
 
         if (!sz) {
@@ -114,17 +115,22 @@ int loop_clients(fd_set* readfds, int* fd_clients, int nb_clients)
     return nb_clients;
 }
 
-int tcp_rec_wrapper(int fd, char* buf, size_t bufsize)
+int tcp_rec_wrapper(int fd, char* buf, struct record_list *records)
 {
-    //CALL_FUNCTION
+    dns_header *dnsheader = NULL;
+    dns_question *dnsquestion = NULL;
+    parse_query(buf, &dnsheader, &dnsquestion);
+    size_t size = 0;
+    dns_packet *packet = make_response(dnsheader, dnsquestion, records->node->soa, records, &size);
+    tcp_send_resp(fd, (char *)packet, size);
 
-    return 0 * fd * *buf * bufsize; // To avoid unused variable warning
+    return 0;
 }
 
 int udp_rec_wrapper(struct sockaddr* addr, char* buf, struct record_list *records)
 {
     //CALL FUNCTION
-    
+
     dns_query *query = init_dns_query(buf);
     print_dns_query(query);
     free(query);
@@ -155,8 +161,9 @@ int udp_send_resp(struct sockaddr* addr, char* buf, size_t bufsize)
         if ((tmp_sent = sendto(fd_save(-1), buf + tot_sent, UDP_MAX_PAYLOAD, MSG_DONTWAIT, addr,
                                sizeof(struct sockaddr_storage))) == -1)
         {
-            fprintf(stderr, "UDP send failed\n");
-            return -1;
+            free_all(-1, -1, NULL, NULL);
+            free(buf);
+            errx(-2, "UDP send failed\n");
         }
         tot_sent += tmp_sent;
         left = bufsize - tot_sent;
@@ -166,8 +173,9 @@ int udp_send_resp(struct sockaddr* addr, char* buf, size_t bufsize)
         if ((tmp_sent = sendto(fd_save(-1), buf + tot_sent, UDP_MAX_PAYLOAD, MSG_DONTWAIT, addr,
                               sizeof(struct sockaddr_storage))) == -1)
         {
-            fprintf(stderr, "UDP send failed\n");
-            return -1;
+            free_all(-1, -1, NULL, NULL);
+            free(buf);
+            errx(-2, "UDP send failed\n");
         }
     }
     return 0;

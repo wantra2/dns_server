@@ -1,1 +1,10 @@
-Readme content
+# INSTALLATION:
+In order to build and install this dns server, you can enter the following
+commands:
+
+cmake .
+make
+sudo make install
+
+
+# Usage
