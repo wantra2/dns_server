@@ -9,7 +9,7 @@ enum record_type
     CNAME = 5,
     TXT = 16,
     SOA = 6,
-    ERROR = 5
+    ERROR = 2
 };
 
 struct soa

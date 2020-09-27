@@ -43,6 +43,7 @@ static char *convert(char *qname)
 dns_packet *make_response(dns_header *header, dns_question *question, struct record_list *records, size_t *size)
 {
     struct record_list *first_rec = records;
+    printf("%d\n", question->qtype);
     dns_packet *pkt = calloc(1, sizeof(dns_packet));
     pkt->header = *header;
     pkt->question = *question;
@@ -62,27 +63,29 @@ dns_packet *make_response(dns_header *header, dns_question *question, struct rec
 
     *size += sizeof(dns_header) + sizeof(dns_question);
 
-    if (question->qtype != A && question->qtype != AAAA && question->qtype != CNAME
+    /*if (question->qtype != A && question->qtype != AAAA && question->qtype != CNAME
         && question->qtype != TXT && question->qtype != SOA)
     {
         pkt->header.rcode = NOTIMP;
         return pkt;
-    }
+    }*/
 
     int found = 0;
     while (records)
     {
-        if (question->qtype == records->node->type && !strcmp(convert(pkt->question.qname), records->node->domain_name))
+        if (question->qtype == records->node->type && !strcmp(pkt->question.qname, records->node->domain_name))
         {
             found++;
             pkt->data = realloc(pkt->data, found * sizeof(dns_response));
             *size += sizeof(dns_response);
-            (((dns_response *)(pkt->data))+(found - 1))->name = pkt->question.qname;
-            (((dns_response *)(pkt->data))+(found - 1))->type = htons(records->node->type);
-            (((dns_response *)(pkt->data))+(found - 1))->class = htons(pkt->question.qclass);
-            (((dns_response *)(pkt->data))+(found - 1))->ttl = htons(records->node->ttl);
-            (((dns_response *)(pkt->data))+(found - 1))->rdata = records->node->content;
-            (((dns_response *)(pkt->data))+(found - 1))->rdlength = htons(strlen(records->node->content));
+            dns_response *tmp = (dns_response *)(pkt->data);
+            tmp += found - 1;
+            tmp->name = pkt->question.qname;
+            tmp->type = htons(records->node->type);
+            tmp->class = htons(pkt->question.qclass);
+            tmp->ttl = htonl(records->node->ttl);
+            tmp->rdata = records->node->content;
+            tmp->rdlength = htons(strlen(records->node->content));
             pkt->header.ancount += 1;
         }
         records = records->next;
@@ -94,7 +97,7 @@ dns_packet *make_response(dns_header *header, dns_question *question, struct rec
         ((dns_response *)(pkt->data))->name = pkt->question.qname;
         ((dns_response *)(pkt->data))->type = htons(SOA);
         ((dns_response *)(pkt->data))->class = htons(pkt->question.qclass);
-        ((dns_response *)(pkt->data))->ttl = htons(first_rec->node->ttl);
+        ((dns_response *)(pkt->data))->ttl = htonl(first_rec->node->ttl);
         ((dns_response *)(pkt->data))->rdata = first_rec->node->content;
         ((dns_response *)(pkt->data))->rdlength = htons(strlen(first_rec->node->content));
         pkt->header.nscount += 1;

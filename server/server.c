@@ -121,7 +121,7 @@ int tcp_rec_wrapper(int fd, char* buf, struct record_list *records)
     dns_question *dnsquestion = NULL;
     parse_query(buf, &dnsheader, &dnsquestion);
     size_t size = 0;
-    dns_packet *packet = make_response(dnsheader, dnsquestion, records->node->soa, records, &size);
+    dns_packet *packet = make_response(dnsheader, dnsquestion, records, &size);
     tcp_send_resp(fd, (char *)packet, size);
 
     return 0;
@@ -131,13 +131,15 @@ int udp_rec_wrapper(struct sockaddr* addr, char* buf, struct record_list *record
 {
     //CALL FUNCTION
 
-    dns_query *query = init_dns_query(buf);
-    print_dns_query(query);
-    free(query);
-    /*
+    // dns_query *query = init_dns_query(buf);
+    // print_dns_query(query);
+    dns_header *dnsheader = NULL;
+    dns_question *dnsquestion = NULL;
+    parse_query(buf, &dnsheader, &dnsquestion);
+    // free(query);
+    size_t size = 0;
     dns_packet *packet = make_response(dnsheader, dnsquestion, records, &size);
-    udp_send_resp(addr, (char *)packet, size);
-    */
+    udp_send_resp(addr, packet, size);
     return 0; // To avoid unused variable warning
 }
 
@@ -151,11 +153,17 @@ int tcp_send_resp(int fd, char* buf, size_t bufsize)
     return 0;
 }
 
-int udp_send_resp(struct sockaddr* addr, char* buf, size_t bufsize)
+int udp_send_resp(struct sockaddr* addr, dns_packet *packet, size_t bufsize)
 {
     int tmp_sent = 0;
     int tot_sent = 0;
     int left = bufsize - tot_sent;
+    char *buf = calloc(bufsize, sizeof(char));;
+    buf = strncpy(buf, (char *)&(packet->header), sizeof(dns_header));
+    char *tmp = buf + sizeof(dns_header);
+    tmp = strncpy(tmp, (char *)&(packet->question), sizeof(dns_question));
+    tmp += sizeof(dns_question);
+    tmp = strncpy(tmp, packet->data, bufsize - sizeof(dns_header) - sizeof(dns_question));
     while (left / UDP_MAX_PAYLOAD)
     {
         if ((tmp_sent = sendto(fd_save(-1), buf + tot_sent, UDP_MAX_PAYLOAD, MSG_DONTWAIT, addr,
@@ -170,7 +178,7 @@ int udp_send_resp(struct sockaddr* addr, char* buf, size_t bufsize)
     }
     if (left != 0)
     {
-        if ((tmp_sent = sendto(fd_save(-1), buf + tot_sent, UDP_MAX_PAYLOAD, MSG_DONTWAIT, addr,
+        if ((tmp_sent = sendto(fd_save(-1), buf + tot_sent, left, MSG_DONTWAIT, addr,
                               sizeof(struct sockaddr_storage))) == -1)
         {
             free_all(-1, -1, NULL, NULL);
@@ -178,5 +186,7 @@ int udp_send_resp(struct sockaddr* addr, char* buf, size_t bufsize)
             errx(-2, "UDP send failed\n");
         }
     }
+    if (buf)
+        free(buf);
     return 0;
 }
