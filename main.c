@@ -102,6 +102,9 @@ int main(int argc, char** argv)
             }
             sz += tmp_add;
             udp_rec_wrapper((struct sockaddr*)&addr, buf, records);
+            //dns_header *header = init_dns_header(buf);
+            //print_header(header);
+            //free(header);
             free(buf);
         }
         if (!FD_ISSET(udpfd, readfds) && !FD_ISSET(sockfd, readfds))

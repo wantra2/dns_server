@@ -6,6 +6,7 @@
 #define DNS_SERVER_PARSE_REQUEST_H
 
 #include <stdint.h>
+#include <sys/types.h>
 
 #define OPCODE_VALUE 0
 #define AA_VALUE 1
@@ -21,19 +22,21 @@
 #define ADDITIONAL_LENGTH 16
 
 typedef struct{
-    uint16_t id;
-    uint16_t qr:1;
-    uint16_t opcode:4;
-    uint16_t aa:1;
-    uint16_t tc:1;
-    uint16_t rd:1;
-    uint16_t ra:1;
-    uint16_t z:3;
-    uint16_t rcode:3;
-    uint16_t qdcount; // questions
-    uint16_t ancount; // response
-    uint16_t nscount; // authority
-    uint16_t arcount; // additional
+    u_int16_t id;
+    u_int16_t qr:1;
+    u_int16_t opcode:4;
+    u_int16_t aa:1;
+    u_int16_t tc:1;
+    u_int16_t rd:1;
+    u_int16_t ra:1;
+    u_int16_t z:1;
+    u_int16_t ad:1;
+    u_int16_t cd:1;
+    u_int16_t rcode:3;
+    u_int16_t qdcount; // questions
+    u_int16_t ancount; // response
+    u_int16_t nscount; // authority
+    u_int16_t arcount; // additional
 }dns_header;
 
 typedef struct{
