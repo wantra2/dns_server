@@ -128,26 +128,7 @@ int udp_rec_wrapper(struct sockaddr* addr, char* buf, struct record_list *record
     dns_query *query = init_dns_query(buf);
     print_dns_query(query);
     free(query);
-
-    //dns_header *dnsheader = NULL;
-    //dns_question *dnsquestion = NULL;
-
-    //dnsheader = init_dns_header(buf);
-    //print_header(dnsheader);
-    //free(dnsheader);
-
-    //buf = buf + 12;
-    //dnsquestion = init_dns_question(buf);
-    //print_question(dnsquestion);
-    //free(dnsquestion);
-    //dnsquestion = init_dns_question(buf);
-    //print_question(dnsquestion);
-    //free(dnsquestion);
-
     /*
-    parse_query(buf, &dnsheader, &dnsquestion);
-    size_t size = 0;
-
     dns_packet *packet = make_response(dnsheader, dnsquestion, records, &size);
     udp_send_resp(addr, (char *)packet, size);
     */
