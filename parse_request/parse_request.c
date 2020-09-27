@@ -9,6 +9,16 @@
 #include <netinet/in.h>
 #include <err.h>
 
+void print_dns_query(dns_query *dns_query)
+{
+    printf("------HEADER------\n");
+    print_header(dns_query->header);
+    printf("-----QUESTION-----\n");
+    print_question(dns_query->question);
+    printf("------------------\n");
+    printf("------------------\n");
+}
+
 void print_header(dns_header *dns_header)
 {
     printf("id = %x\n", dns_header->id);
@@ -30,13 +40,21 @@ void print_header(dns_header *dns_header)
 
 void print_question(dns_question *dns_question)
 {
-    printf("%s \n", dns_question->qname);
-    printf("%d \n", dns_question->qtype);
-    printf("%d \n", dns_question->qclass);
+    printf("qname = %s \n", dns_question->qname);
+    printf("qtype = %x \n", dns_question->qtype);
+    printf("qclass = %x \n", dns_question->qclass);
 }
 
 #define LAST(k,n) ((k) & ((1<<(n))-1))
 #define MID(k,m,n) LAST((k)>>(m),((n)-(m)))
+
+dns_query *init_dns_query(char *buf)
+{
+    dns_query *query = malloc(sizeof(dns_query));
+    query->header = init_dns_header(buf);
+    query->question = init_dns_question(buf);
+    return query;
+}
 
 dns_header *init_dns_header(char *data)
 {
@@ -93,14 +111,61 @@ dns_header *init_dns_header(char *data)
 }
 
 
-dns_question *init_dns_question(void *data)
+dns_question *init_dns_question(char *buf)
 {
+
+    //Standard size of header
+    buf = buf + 12;
+
     dns_question *question = calloc(1, sizeof(dns_question));
-    question->qname = ((char *)data) + HEADER_LENGTH;
-    question->qtype = *((uint16_t *)(question->qname + strlen(question->qname) + 1));
-    question->qclass = *((uint16_t *)(question->qname + strlen(question->qname) + 1 + 16));
-    question->qtype = ntohs(question->qtype);
-    question->qclass = ntohs(question->qclass);
+    
+    //First compute number and size of each label
+    char *tmp = buf;
+    int label_number = 0;
+    size_t str_size = 0;
+    while (*tmp != 0x00)
+    {
+        if(*((uint8_t*)tmp) < 32) {
+            label_number++;
+            str_size += *((uint8_t*)tmp);
+        }
+        tmp ++;
+    }
+    //Then create and fill a buffer to build the searched name.
+    size_t size = str_size + label_number; //-1 pour les intevales mais +1 pour le \0
+    char *res = malloc(sizeof(char)*size);
+    tmp = buf + 1;
+    for (size_t i = 0; i < size-1; i++)
+    {
+        if(*((uint8_t*)tmp) > 32) {
+            res[i] = *((uint8_t*)tmp);
+        } else {
+            res[i] = '.';
+        }
+        tmp ++;
+    }
+    res[size-1] = '\0';
+
+    question->qname = res;
+
+    //Moving forward on data to find Qtype
+    tmp = buf + size + 1;
+    //Need to use to uint8 and merge them as uint16 is not always aligned
+    uint8_t a = *((uint8_t*)tmp);
+    tmp ++;
+    uint8_t b = *((uint8_t*)tmp);
+    uint16_t qtype = ((uint16_t)a << 8) | b;
+    tmp++;
+    question->qtype = qtype;
+    
+    //Moving forward on data to find Qclass
+    //Need to use to uint8 and merge them as uint16 is not always aligned
+    a = *((uint8_t*)tmp);
+    tmp ++;
+    b = *((uint8_t*)tmp);
+    uint16_t qclass = ((uint16_t)a << 8) | b;
+    question->qclass = qclass;
+
     return question;
 }
 
@@ -117,7 +182,3 @@ void parse_query(void *data, dns_header **dnsheader, dns_question **dnsquestion)
     if (dnsquestion == NULL)
         return;
 }
-
-
-
-

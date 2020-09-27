@@ -45,11 +45,19 @@ typedef struct{
     uint16_t qclass;
 }dns_question;
 
+typedef struct{
+    dns_header* header;
+    dns_question* question;
+}dns_query;
+
+
 void print_header(dns_header *dns_header);
 void print_question(dns_question *dns_question);
+void print_dns_query(dns_query *dns_query);
 
-dns_header *init_dns_header();
-dns_question *init_dns_question();
+dns_query *init_dns_query(char *buf);
+dns_header *init_dns_header(char *data);
+dns_question *init_dns_question(char *buf);
 
 void parse_query(void *data, dns_header **dnsheader, dns_question **dnsquestion);
 
