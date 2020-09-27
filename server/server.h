@@ -24,7 +24,8 @@
 #include <netdb.h>
 
 #include "serv_helpers.h"
-
+#include "../parse_zonefile/zone.h"
+#include "../make_response/make_response.h"
 #define MAX_CONNECTIONS 20
 #define UDP_MAX_PAYLOAD 512
 
@@ -37,7 +38,7 @@ int loop_clients(fd_set* readfds, int* fd_clients, int nb_clients);
 
 int tcp_rec_wrapper(int fd, char* buf, size_t bufsize);
 
-int udp_rec_wrapper(struct sockaddr* addr, char* buf, size_t bufsize);
+int udp_rec_wrapper(struct sockaddr* addr, char* buf, struct record_list *records);
 
 int tcp_send_resp(int fd, char* buf, size_t bufsize);
 

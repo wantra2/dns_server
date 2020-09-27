@@ -42,14 +42,14 @@ static void concat_soa(struct soa *soa, char r_data[256])
     r_data = strcat(r_data, e);
 }
 
-dns_packet *make_response(dns_header *header, dns_question *question, struct soa *soa, struct record_list *records)
+dns_packet *make_response(dns_header *header, dns_question *question, struct soa *soa, struct record_list *records, size_t *size)
 {
     dns_packet *pkt = calloc(1, sizeof(dns_packet));
 
     pkt->header = *header;
     pkt->question = *question;
     pkt->data = malloc(1);
-
+    *size += sizeof(dns_header) + sizeof(dns_question);
     if (question->qtype != A && question->qtype != AAAA && question->qtype != CNAME
         && question->qtype != TXT && question->qtype != SOA)
     {
@@ -65,6 +65,7 @@ dns_packet *make_response(dns_header *header, dns_question *question, struct soa
         {
             found++;
             pkt->data = realloc(pkt->data, found * sizeof(dns_response));
+            *size += sizeof(dns_response);
             (((dns_response *)(pkt->data))+(found - 1))->name = question->qname;
             (((dns_response *)(pkt->data))+(found - 1))->type = records->node->type;
             (((dns_response *)(pkt->data))+(found - 1))->class = question->qclass;
@@ -77,6 +78,7 @@ dns_packet *make_response(dns_header *header, dns_question *question, struct soa
     if (found == 0)
     {
         pkt->data = realloc(pkt->data, sizeof(dns_response));
+        *size += sizeof(dns_response);
         ((dns_response *)(pkt->data))->name = question->qname;
         ((dns_response *)(pkt->data))->type = SOA;
         ((dns_response *)(pkt->data))->class = question->qclass;

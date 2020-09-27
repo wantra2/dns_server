@@ -1,4 +1,5 @@
 #include "server.h"
+#include "../parse_request/parse_request.h"
 
 
 int fds_init(fd_set* readfds, int sockfd, int udpfd, int* fd_clients,
@@ -116,21 +117,19 @@ int tcp_rec_wrapper(int fd, char* buf, size_t bufsize)
 {
     //CALL_FUNCTION
 
-    buf[bufsize] = 0; // Temporary
-    printf("%s\n", buf);
     return 0 * fd * *buf * bufsize; // To avoid unused variable warning
 }
 
-int udp_rec_wrapper(struct sockaddr* addr, char* buf, size_t bufsize)
+int udp_rec_wrapper(struct sockaddr* addr, char* buf, struct record_list *records)
 {
     //CALL FUNCTION
-
-    buf[bufsize] = 0; // Temporary
-    printf("%s", buf);
-    udp_send_resp(addr, buf, bufsize);
-    if (!addr)
-        return 0;
-    return 0 * *buf * bufsize; // To avoid unused variable warning
+    dns_header *dnsheader = NULL;
+    dns_question *dnsquestion = NULL;
+    parse_query(buf, dnsheader, dnsquestion);
+    size_t size = 0;
+    dns_packet *packet = make_response(dnsheader, dnsquestion, records->node->soa, records, &size);
+    udp_send_resp(addr, (char *)packet, size);
+    return 0; // To avoid unused variable warning
 }
 
 int tcp_send_resp(int fd, char* buf, size_t bufsize)

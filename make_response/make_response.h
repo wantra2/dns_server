@@ -33,6 +33,6 @@ typedef struct{
     char *data;
 }dns_packet;
 
-dns_packet *make_response(dns_header *header, dns_question *question, struct soa *soa, struct record_list *records);
+dns_packet *make_response(dns_header *header, dns_question *question, struct soa *soa, struct record_list *records, size_t *size);
 
 #endif //DNS_SERVER_MAKE_RESPONSE_H

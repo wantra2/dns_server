@@ -7,6 +7,7 @@
 #include <stdlib.h>
 #include <memory.h>
 #include <netinet/in.h>
+#include <err.h>
 
 void print_header(dns_header *dns_header)
 {
@@ -77,14 +78,16 @@ dns_question *init_dns_question(void *data)
 
 void parse_query(void *data, dns_header *dnsheader, dns_question *dnsquestion)
 {
-    dns_header *header = init_dns_header(data);
-    dnsheader = header;
-    if (header->qdcount == 0) {
-        printf("NO QUESTION\n");
+    dnsheader = init_dns_header(data);
+    if (dnsheader == NULL)
         return;
+    if (dnsheader->qdcount == 0) {
+        warnx("NO QUESTION\n");
+        exit(1);
     }
-    dns_question *question = init_dns_question(data);
-    dnsquestion = question;
+    dnsquestion = init_dns_question(data);
+    if (dnsquestion == NULL)
+        return;
 }
 
 

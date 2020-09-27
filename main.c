@@ -1,12 +1,21 @@
 #include <stdio.h>
 #include "parse_request/parse_request.h"
 #include "server/server.h"
+#include "parse_zonefile/zone.h"
 
 int main(int argc, char** argv)
 {
-    if (argc != 2)
+    if (argc != 3)
     {
-        fprintf(stderr, "Need a port\n");
+        fprintf(stderr, "Need a port/zone file\n");
+        return -1;
+    }
+
+    struct record_list *records = create_record_list(argv[2]);
+    if (zonefile_error != 0)
+    {
+        printf("Erreur dans le fichier de zone, le serveur ne peut demarrer\n");
+        free_list(records);
         return -1;
     }
 
@@ -71,7 +80,7 @@ int main(int argc, char** argv)
                 fprintf(stderr, "UDP read failed\n");
                 return -1;
             }
-            udp_rec_wrapper((struct sockaddr*)&addr, buf, sz);
+            udp_rec_wrapper((struct sockaddr*)&addr, buf, records);
         }
         if (!FD_ISSET(udpfd, readfds) && !FD_ISSET(sockfd, readfds))
         {
@@ -83,6 +92,6 @@ int main(int argc, char** argv)
     free(readfds);
     close(udpfd);
     close(sockfd);
-
+    free_list(records);
     return 0;
 }
