@@ -6,6 +6,8 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 
+int fd_save(int fd);
+
 int prep_tcp(int port);
 
 int prep_udp(int port);

@@ -21,6 +21,7 @@ int main(int argc, char** argv)
     int sockfd = prep_tcp(port); // Prepares and binds the TCP socket for IPv4/6
 
     int udpfd = prep_udp(port); // Prepares and binds the UDP socket for IPv4/6
+    udpfd = fd_save(udpfd);
 
     if (listen(sockfd, MAX_CONNECTIONS)!=0)
     {
@@ -58,13 +59,19 @@ int main(int argc, char** argv)
         if (FD_ISSET(udpfd, readfds))
         {
             char buf[UDP_MAX_PAYLOAD];
-            ssize_t sz = read(udpfd, &buf, UDP_MAX_PAYLOAD);
+
+            struct sockaddr_storage addr;
+
+            socklen_t addrlen = sizeof(struct sockaddr_storage);
+
+            ssize_t sz = recvfrom(udpfd, buf, UDP_MAX_PAYLOAD, MSG_DONTWAIT,
+                                  (struct sockaddr*)&addr, &addrlen);
             if (sz < 0)
             {
                 fprintf(stderr, "UDP read failed\n");
                 return -1;
             }
-            udp_rec_wrapper(buf, sz);
+            udp_rec_wrapper((struct sockaddr*)&addr, buf, sz);
         }
         if (!FD_ISSET(udpfd, readfds) && !FD_ISSET(sockfd, readfds))
         {

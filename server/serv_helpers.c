@@ -1,5 +1,13 @@
 #include "serv_helpers.h"
 
+int fd_save(int fd)
+{
+    static int stk_fd = -1;
+    if (fd != -1 && stk_fd == -1)
+        stk_fd = fd;
+    return stk_fd;
+}
+
 int prep_tcp(int port)
 {
 
