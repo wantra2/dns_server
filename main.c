@@ -114,7 +114,13 @@ int main(int argc, char** argv)
         }
     }
 
-
+    for (int i =0; i < nb_clients; i++)
+    {
+        if (fd_clients[i])
+        {
+            close(fd_clients[i]);
+        }
+    }
     free_all(-1, -1, NULL, NULL);
     free_list(records);
     return 0;
