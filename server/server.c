@@ -1,5 +1,6 @@
 #include "server.h"
 
+
 int fds_init(fd_set* readfds, int sockfd, int udpfd, int* fd_clients,
              int nb_clients)
 // Returns the new found fd_max
@@ -120,12 +121,35 @@ int tcp_rec_wrapper(int fd, char* buf, size_t bufsize)
     return 0 * fd * *buf * bufsize; // To avoid unused variable warning
 }
 
-int udp_rec_wrapper(char* buf, size_t bufsize)
+int udp_rec_wrapper(struct sockaddr* addr, char* buf, size_t bufsize)
 {
     //CALL FUNCTION
 
     buf[bufsize] = 0; // Temporary
     printf("%s", buf);
+    udp_send_resp(addr, buf, bufsize);
+    if (!addr)
+        return 0;
     return 0 * *buf * bufsize; // To avoid unused variable warning
+}
 
+int tcp_send_resp(int fd, char* buf, size_t bufsize)
+{
+    if (send(fd, buf, bufsize, MSG_DONTWAIT) == -1)
+    {
+        fprintf(stderr, "TCP send failed\n");
+        return -1;
+    }
+    return 0;
+}
+
+int udp_send_resp(struct sockaddr* addr, char* buf, size_t bufsize)
+{
+    if (sendto(fd_save(-1), buf, bufsize, MSG_DONTWAIT, addr,
+               sizeof(struct sockaddr_storage)) == -1)
+    {
+        fprintf(stderr, "UDP send failed\n");
+        return -1;
+    }
+    return 0;
 }
