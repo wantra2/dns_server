@@ -150,7 +150,7 @@ int udp_rec_wrapper(struct sockaddr* addr, char* buf, struct record_list *record
 
     dns_packet *packet = make_response(dnsheader, dnsquestion, records, &size);
     udp_send_resp(addr, (char *)packet, size);
-
+    */
     return 0; // To avoid unused variable warning
 }
 
