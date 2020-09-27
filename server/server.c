@@ -102,15 +102,17 @@ int loop_clients(fd_set* readfds, int* fd_clients, int nb_clients, struct record
             free(buf);
             errx(-2, "TCP, reading query failed\n");
         }
-
-        tcp_rec_wrapper(fd_clients[i], buf, records);
-        free(buf);
-
+        
         if (!sz) {
+            shutdown(fd_clients[i], SHUT_RDWR);
             close(fd_clients[i]);
             nb_clients--;
             fd_clients[i] = 0;
+            free(buf);
+            continue;
         }
+        tcp_rec_wrapper(fd_clients[i], buf, records);
+        free(buf);
     }
     return nb_clients;
 }
@@ -122,7 +124,7 @@ int tcp_rec_wrapper(int fd, char* buf, struct record_list *records)
     parse_query(buf, &dnsheader, &dnsquestion);
     size_t size = 0;
     dns_packet *packet = make_response(dnsheader, dnsquestion, records, &size);
-    tcp_send_resp(fd, (char *)packet, size);
+    tcp_send_resp(fd, packet, size);
 
     return 0;
 }
@@ -143,8 +145,16 @@ int udp_rec_wrapper(struct sockaddr* addr, char* buf, struct record_list *record
     return 0; // To avoid unused variable warning
 }
 
-int tcp_send_resp(int fd, char* buf, size_t bufsize)
+int tcp_send_resp(int fd, dns_packet *packet, size_t bufsize)
 {
+    char *buf = calloc(bufsize, sizeof(char));;
+    buf = strncpy(buf, (char *)&(packet->header), sizeof(dns_header));
+    char *tmp = buf + sizeof(dns_header);
+    tmp = strncpy(tmp, (char *)&(packet->question), sizeof(dns_question));
+    tmp += sizeof(dns_question);
+    tmp = strncpy(tmp, packet->data, bufsize - sizeof(dns_header) - sizeof(dns_question));
+    if (buf)
+        free(buf);
     if (send(fd, buf, bufsize, MSG_DONTWAIT) == -1)
     {
         fprintf(stderr, "TCP send failed\n");

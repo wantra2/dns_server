@@ -47,7 +47,7 @@ int tcp_rec_wrapper(int fd, char* buf, struct record_list *records);
 int udp_rec_wrapper(struct sockaddr* addr, char* buf, struct record_list *records);
 
 // Sends the response contained in buf to fd via tcp
-int tcp_send_resp(int fd, char* buf, size_t bufsize);
+int tcp_send_resp(int fd, dns_packet *packet, size_t bufsize);
 
 // Sends the response contained in buf to the address and port in addr via udp
 int udp_send_resp(struct sockaddr* addr, dns_packet *packet, size_t bufsize);

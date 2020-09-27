@@ -15,33 +15,10 @@ void print_response(dns_response *dns_response)
     printf("%s \n", dns_response->rdata);
 }
 
-static char *convert(char *qname)
-{
-    char *buffer = calloc(1, 256 * sizeof(char));       /* MAX_NAME_SIZE = 255 */
-    char length[3];
-
-    int offset = 0;
-    snprintf(length, 2, "%x", qname[offset]);
-    strncpy(buffer + strlen(buffer), qname + offset + 1, atoi(length));
-    offset += atoi(length) + 1;
-    buffer[offset - 1] = '.';
-
-    while (qname[offset] != '\x00')
-    {
-        snprintf(length, 3, "%x", qname[offset]);
-        strncpy(buffer + strlen(buffer), qname + offset + 1, atoi(length));
-        offset += atoi(length) + 1;
-        buffer[offset -1] = '.';
-    }
-
-    buffer[offset -1] = '\0';
-    return buffer;
-}
 
 dns_packet *make_response(dns_header *header, dns_question *question, struct record_list *records, size_t *size)
 {
     struct record_list *first_rec = records;
-    printf("%d\n", question->qtype);
     dns_packet *pkt = calloc(1, sizeof(dns_packet));
     pkt->header = *header;
     pkt->question = *question;
