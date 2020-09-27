@@ -1,6 +1,4 @@
-//
-// Created by denis on 26/09/2020.
-//
+
 
 #ifndef DNS_SERVER_PARSE_REQUEST_H
 #define DNS_SERVER_PARSE_REQUEST_H

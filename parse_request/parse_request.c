@@ -1,6 +1,4 @@
-//
-// Created by denis on 26/09/2020.
-//
+
 
 #include "parse_request.h"
 #include <stdio.h>

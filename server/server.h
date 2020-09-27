@@ -1,7 +1,4 @@
 
-//
-// Created by denis on 26/09/2020.
-//
 
 #ifndef DNS_SERVER_SERVER_H
 #define DNS_SERVER_SERVER_H
