@@ -144,11 +144,28 @@ int tcp_send_resp(int fd, char* buf, size_t bufsize)
 
 int udp_send_resp(struct sockaddr* addr, char* buf, size_t bufsize)
 {
-    if (sendto(fd_save(-1), buf, bufsize, MSG_DONTWAIT, addr,
-               sizeof(struct sockaddr_storage)) == -1)
+    int tmp_sent = 0;
+    int tot_sent = 0;
+    int left = bufsize - tot_sent;
+    while (left / UDP_MAX_PAYLOAD)
     {
-        fprintf(stderr, "UDP send failed\n");
-        return -1;
+        if ((tmp_sent = sendto(fd_save(-1), buf + tot_sent, UDP_MAX_PAYLOAD, MSG_DONTWAIT, addr,
+                               sizeof(struct sockaddr_storage))) == -1)
+        {
+            fprintf(stderr, "UDP send failed\n");
+            return -1;
+        }
+        tot_sent += tmp_sent;
+        left = bufsize - tot_sent;
+    }
+    if (left != 0)
+    {
+        if ((tmp_sent = sendto(fd_save(-1), buf + tot_sent, UDP_MAX_PAYLOAD, MSG_DONTWAIT, addr,
+                              sizeof(struct sockaddr_storage))) == -1)
+        {
+            fprintf(stderr, "UDP send failed\n");
+            return -1;
+        }
     }
     return 0;
 }

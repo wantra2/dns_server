@@ -67,20 +67,43 @@ int main(int argc, char** argv)
 
         if (FD_ISSET(udpfd, readfds))
         {
-            char buf[UDP_MAX_PAYLOAD];
+            char* buf = malloc(UDP_MAX_PAYLOAD);
+            if (buf == NULL)
+            {
+                fprintf(stderr, "malloc failed\n");
+                return -1;
+            }
 
             struct sockaddr_storage addr;
 
             socklen_t addrlen = sizeof(struct sockaddr_storage);
 
-            ssize_t sz = recvfrom(udpfd, buf, UDP_MAX_PAYLOAD, MSG_DONTWAIT,
-                                  (struct sockaddr*)&addr, &addrlen);
-            if (sz < 0)
+            int i = 0;
+            ssize_t sz = 0;
+            int tmp_add = 0;
+            while ((tmp_add = recvfrom(udpfd, buf + i * UDP_MAX_PAYLOAD,
+                                      UDP_MAX_PAYLOAD, MSG_DONTWAIT,
+                                       (struct sockaddr*)&addr, &addrlen))
+                   == UDP_MAX_PAYLOAD)
             {
-                fprintf(stderr, "UDP read failed\n");
+                if (tmp_add < 0)
+                {
+                    perror(NULL);
+                    fprintf(stderr, "UDP read failed\n");
+                    return -1;
+                }
+                sz += tmp_add;
+                i++;
+                if ((buf = realloc(buf, sz + UDP_MAX_PAYLOAD)) == NULL)
+                {
+                fprintf(stderr, "malloc failed\n");
                 return -1;
+                }
             }
             udp_rec_wrapper((struct sockaddr*)&addr, buf, records);
+            sz += tmp_add;
+            udp_rec_wrapper((struct sockaddr*)&addr, buf, sz, records);
+            free(buf);
         }
         if (!FD_ISSET(udpfd, readfds) && !FD_ISSET(sockfd, readfds))
         {
