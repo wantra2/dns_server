@@ -30,6 +30,8 @@ int main(int argc, char** argv)
     int sockfd = prep_tcp(port); // Prepares and binds the TCP socket for IPv4/6
 
     int udpfd = prep_udp(port); // Prepares and binds the UDP socket for IPv4/6
+    if (sockfd < 0 || udpfd < 0)
+        return -1;
     udpfd = fd_save(udpfd);
 
     if (listen(sockfd, MAX_CONNECTIONS)!=0)
