@@ -1,5 +1,5 @@
 .idea
 cmake-build-debug
-zonefile
+cmake-build-debug/zonefile
 build/
 *~

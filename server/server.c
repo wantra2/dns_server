@@ -125,7 +125,7 @@ int udp_rec_wrapper(struct sockaddr* addr, char* buf, struct record_list *record
     //CALL FUNCTION
     dns_header *dnsheader = NULL;
     dns_question *dnsquestion = NULL;
-    parse_query(buf, dnsheader, dnsquestion);
+    parse_query(buf, &dnsheader, &dnsquestion);
     size_t size = 0;
     dns_packet *packet = make_response(dnsheader, dnsquestion, records->node->soa, records, &size);
     udp_send_resp(addr, (char *)packet, size);

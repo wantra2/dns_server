@@ -48,6 +48,6 @@ void print_question(dns_question *dns_question);
 dns_header *init_dns_header();
 dns_question *init_dns_question();
 
-void parse_query(void *data, dns_header *dnsheader, dns_question *dnsquestion);
+void parse_query(void *data, dns_header **dnsheader, dns_question **dnsquestion);
 
 #endif //DNS_SERVER_PARSE_REQUEST_H

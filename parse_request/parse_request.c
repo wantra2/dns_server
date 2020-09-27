@@ -76,16 +76,16 @@ dns_question *init_dns_question(void *data)
     return question;
 }
 
-void parse_query(void *data, dns_header *dnsheader, dns_question *dnsquestion)
+void parse_query(void *data, dns_header **dnsheader, dns_question **dnsquestion)
 {
-    dnsheader = init_dns_header(data);
+    *dnsheader = init_dns_header(data);
     if (dnsheader == NULL)
         return;
-    if (dnsheader->qdcount == 0) {
+    if ((*dnsheader)->qdcount == 0) {
         warnx("NO QUESTION\n");
         exit(1);
     }
-    dnsquestion = init_dns_question(data);
+    *dnsquestion = init_dns_question(data);
     if (dnsquestion == NULL)
         return;
 }

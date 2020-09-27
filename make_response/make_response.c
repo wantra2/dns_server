@@ -4,6 +4,7 @@
 
 #include <stdio.h>
 #include <memory.h>
+#include <netinet/in.h>
 #include "make_response.h"
 
 void print_response(dns_response *dns_response)
@@ -45,9 +46,16 @@ static void concat_soa(struct soa *soa, char r_data[256])
 dns_packet *make_response(dns_header *header, dns_question *question, struct soa *soa, struct record_list *records, size_t *size)
 {
     dns_packet *pkt = calloc(1, sizeof(dns_packet));
-
     pkt->header = *header;
+    pkt->header.id = htons(pkt->header.id);
+    pkt->header.qdcount = htons(header->qdcount);
+    pkt->header.ancount = htons(header->ancount);
+    pkt->header.nscount = htons(header->nscount);
+    pkt->header.arcount = htons(header->arcount);
+    pkt->header.qr = 1;
     pkt->question = *question;
+    pkt->question.qtype = htons(question->qtype);
+    pkt->question.qclass = htons(question->qclass);
     pkt->data = malloc(1);
     *size += sizeof(dns_header) + sizeof(dns_question);
     if (question->qtype != A && question->qtype != AAAA && question->qtype != CNAME
