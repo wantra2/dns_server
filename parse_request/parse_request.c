@@ -38,7 +38,7 @@ void print_response(dns_response *dns_response)
     printf("%d \n", dns_response->class);
     printf("%d \n", dns_response->ttl);
     printf("%d \n", dns_response->rdlength);
-    printf("%d \n", dns_response->rdata);
+    printf("%s \n", dns_response->rdata);
 }
 
 dns_header *init_dns_header()
@@ -64,9 +64,12 @@ dns_response *init_dns_response()
     return response;
 }
 
-dns_pkt *init_dns_pkt()
+dns_pkt *init_dns_pkt(size_t size)
 {
     dns_pkt *pkt = calloc(1, sizeof(dns_pkt));
+    if (pkt == NULL)
+        return NULL;
+    pkt->data = calloc(size, sizeof(char));
     return pkt;
 }
 
@@ -89,16 +92,19 @@ dns_question *parse_question(dns_pkt *pkt)
     return question;
 }
 
+
 dns_pkt *parse_query(void *data, dns_question *question, size_t pkt_size)
 {
-    dns_pkt *pkt = init_dns_pkt();
+    dns_pkt *pkt = init_dns_pkt(pkt_size);
 
     parse_header(pkt, data);
-    memcpy(pkt->data, ((char *)data) + HEADER_LENGTH, pkt_size);
+    memcpy(pkt->data, ((char *)data) + HEADER_LENGTH, pkt_size - HEADER_LENGTH);
     if (pkt->header.qdcount == 1)
-        parse_question(pkt);
+        question = parse_question(pkt);
+    print_question(question);
     return pkt;
 }
+
 
 
 
