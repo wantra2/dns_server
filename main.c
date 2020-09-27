@@ -100,9 +100,8 @@ int main(int argc, char** argv)
                 return -1;
                 }
             }
-            udp_rec_wrapper((struct sockaddr*)&addr, buf, records);
             sz += tmp_add;
-            udp_rec_wrapper((struct sockaddr*)&addr, buf, sz, records);
+            udp_rec_wrapper((struct sockaddr*)&addr, buf, records);
             free(buf);
         }
         if (!FD_ISSET(udpfd, readfds) && !FD_ISSET(sockfd, readfds))
