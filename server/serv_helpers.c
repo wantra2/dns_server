@@ -113,9 +113,3 @@ void swap(char* a, char* b)
     *a = *b;
     *b = tmp;
 }
-
-
-int resp_tcp(int fd, char* buf, size_t bufsize)
-{
-    return send(fd, buf, bufsize, MSG_CONFIRM);
-}

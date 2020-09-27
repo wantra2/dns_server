@@ -7,4 +7,6 @@ make
 sudo make install
 
 
-# Usage
+# Usage the following options are currently supported:
+  --file [filename]: Mandatory option, where file corresponds to a zonefile
+  -- ipv4
