@@ -50,6 +50,7 @@ int handle_connection(int sockfd, fd_set* readfds, int* fd_clients,
     }
     printf("New connection from %s#%s\n", host, port);
 
+
     if (nb_clients >= MAX_CONNECTIONS)
     {
         fprintf(stderr, "Too many open connections. Dropping this one\n");
@@ -127,7 +128,7 @@ int udp_rec_wrapper(struct sockaddr* addr, char* buf, struct record_list *record
     dns_question *dnsquestion = NULL;
     parse_query(buf, &dnsheader, &dnsquestion);
     size_t size = 0;
-    dns_packet *packet = make_response(dnsheader, dnsquestion, records->node->soa, records, &size);
+    dns_packet *packet = make_response(dnsheader, dnsquestion, records, &size);
     udp_send_resp(addr, (char *)packet, size);
     return 0; // To avoid unused variable warning
 }

@@ -22,14 +22,14 @@
 
 typedef struct{
     uint16_t id;
+    uint16_t ra:1;
+    uint16_t z:3;
+    uint16_t rcode:3;
     uint16_t qr:1;
     uint16_t opcode:4;
     uint16_t aa:1;
     uint16_t tc:1;
     uint16_t rd:1;
-    uint16_t ra:1;
-    uint16_t z:3;
-    uint16_t rcode:3;
     uint16_t qdcount; // questions
     uint16_t ancount; // response
     uint16_t nscount; // authority

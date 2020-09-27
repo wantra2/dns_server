@@ -50,25 +50,11 @@ dns_header *init_dns_header(void *data)
     return header;
 }
 
-static char *sanitize(char *qname)
-{
-    int len = strlen(qname);
-    char *ret = calloc(len, sizeof(char));
-    for (int i = 1; i < len; ++i)
-    {
-        if (qname[i] < 45) //label
-            ret[i-1] = '.';
-        else
-            ret[i-1] = qname[i];
-    }
-    return ret;
-}
 
 dns_question *init_dns_question(void *data)
 {
     dns_question *question = calloc(1, sizeof(dns_question));
     question->qname = ((char *)data) + HEADER_LENGTH;
-    question->qname = sanitize(question->qname);
     question->qtype = *((uint16_t *)(question->qname + strlen(question->qname) + 1));
     question->qclass = *((uint16_t *)(question->qname + strlen(question->qname) + 1 + 16));
     question->qtype = ntohs(question->qtype);

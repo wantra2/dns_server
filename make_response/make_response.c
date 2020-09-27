@@ -17,47 +17,51 @@ void print_response(dns_response *dns_response)
     printf("%s \n", dns_response->rdata);
 }
 
-static void concat_soa(struct soa *soa, char r_data[256])
+static char *convert(char *qname)
 {
-    char a[32] = {0};
-    snprintf(a, 32, "%zu", soa->serial);
-    char b[32] = {0};
-    snprintf(b, 32, "%zu", soa->refresh);
-    char c[32] = {0};
-    snprintf(c, 32, "%zu", soa->retry);
-    char d[32] = {0};
-    snprintf(d, 32, "%zu", soa->expire);
-    char e[32] = {0};
-    snprintf(e, 32, "%zu", soa->minimum_ttl);
-    r_data = strcat(soa->mname, " ");
-    r_data = strcat(r_data, soa->rname);
-    r_data = strcat(r_data, " ");
-    r_data = strcat(r_data, a);
-    r_data = strcat(r_data, " ");
-    r_data = strcat(r_data, b);
-    r_data = strcat(r_data, " ");
-    r_data = strcat(r_data, c);
-    r_data = strcat(r_data, " ");
-    r_data = strcat(r_data, d);
-    r_data = strcat(r_data, " ");
-    r_data = strcat(r_data, e);
+    char *buffer = calloc(1, 256 * sizeof(char));       /* MAX_NAME_SIZE = 255 */
+    char length[3];
+
+    int offset = 0;
+    snprintf(length, 2, "%x", qname[offset]);
+    strncpy(buffer + strlen(buffer), qname + offset + 1, atoi(length));
+    offset += atoi(length) + 1;
+    buffer[offset - 1] = '.';
+
+    while (qname[offset] != '\x00')
+    {
+        snprintf(length, 3, "%x", qname[offset]);
+        strncpy(buffer + strlen(buffer), qname + offset + 1, atoi(length));
+        offset += atoi(length) + 1;
+        buffer[offset -1] = '.';
+    }
+
+    buffer[offset -1] = '\0';
+    return buffer;
 }
 
-dns_packet *make_response(dns_header *header, dns_question *question, struct soa *soa, struct record_list *records, size_t *size)
+dns_packet *make_response(dns_header *header, dns_question *question, struct record_list *records, size_t *size)
 {
+    struct record_list *first_rec = records;
     dns_packet *pkt = calloc(1, sizeof(dns_packet));
     pkt->header = *header;
-    pkt->header.id = htons(pkt->header.id);
-    pkt->header.qdcount = htons(header->qdcount);
-    pkt->header.ancount = htons(header->ancount);
-    pkt->header.nscount = htons(header->nscount);
-    pkt->header.arcount = htons(header->arcount);
-    pkt->header.qr = 1;
     pkt->question = *question;
-    pkt->question.qtype = htons(question->qtype);
-    pkt->question.qclass = htons(question->qclass);
+
+    pkt->header.id = htons(pkt->header.id);
+    pkt->header.qdcount = htons(pkt->header.qdcount);
+    pkt->header.ancount = htons(pkt->header.ancount);
+    pkt->header.nscount = htons(pkt->header.nscount);
+    pkt->header.arcount = htons(pkt->header.arcount);
+    pkt->header.rcode = NOERROR;
+    pkt->header.qr = 1;
+
+    pkt->question.qtype = htons(pkt->question.qtype);
+    pkt->question.qclass = htons(pkt->question.qclass);
+
     pkt->data = malloc(1);
+
     *size += sizeof(dns_header) + sizeof(dns_question);
+
     if (question->qtype != A && question->qtype != AAAA && question->qtype != CNAME
         && question->qtype != TXT && question->qtype != SOA)
     {
@@ -66,34 +70,34 @@ dns_packet *make_response(dns_header *header, dns_question *question, struct soa
     }
 
     int found = 0;
-    char r_data[256];
     while (records)
     {
-        if (question->qtype == records->node->type && !strcmp(question->qname, records->node->domain_name))
+        if (question->qtype == records->node->type && !strcmp(convert(pkt->question.qname), records->node->domain_name))
         {
             found++;
             pkt->data = realloc(pkt->data, found * sizeof(dns_response));
             *size += sizeof(dns_response);
-            (((dns_response *)(pkt->data))+(found - 1))->name = question->qname;
-            (((dns_response *)(pkt->data))+(found - 1))->type = records->node->type;
-            (((dns_response *)(pkt->data))+(found - 1))->class = question->qclass;
-            (((dns_response *)(pkt->data))+(found - 1))->ttl = records->node->ttl;
-            (((dns_response *)(pkt->data))+(found - 1))->rdlength = strlen(records->node->domain_name);
-            (((dns_response *)(pkt->data))+(found - 1))->rdata = records->node->domain_name;
+            (((dns_response *)(pkt->data))+(found - 1))->name = pkt->question.qname;
+            (((dns_response *)(pkt->data))+(found - 1))->type = htons(records->node->type);
+            (((dns_response *)(pkt->data))+(found - 1))->class = htons(pkt->question.qclass);
+            (((dns_response *)(pkt->data))+(found - 1))->ttl = htons(records->node->ttl);
+            (((dns_response *)(pkt->data))+(found - 1))->rdata = records->node->content;
+            (((dns_response *)(pkt->data))+(found - 1))->rdlength = htons(strlen(records->node->content));
+            pkt->header.ancount += 1;
         }
         records = records->next;
     }
     if (found == 0)
     {
-        pkt->data = realloc(pkt->data, sizeof(dns_response));
+        pkt->data = realloc(pkt->data, 1 * sizeof(dns_response));
         *size += sizeof(dns_response);
-        ((dns_response *)(pkt->data))->name = question->qname;
-        ((dns_response *)(pkt->data))->type = SOA;
-        ((dns_response *)(pkt->data))->class = question->qclass;
-        ((dns_response *)(pkt->data))->ttl = soa->minimum_ttl;
-        concat_soa(soa, r_data);
-        ((dns_response *)(pkt->data))->rdata = r_data;
-        ((dns_response *)(pkt->data))->rdlength = strlen(((dns_response *)(pkt->data))->rdata);
+        ((dns_response *)(pkt->data))->name = pkt->question.qname;
+        ((dns_response *)(pkt->data))->type = htons(SOA);
+        ((dns_response *)(pkt->data))->class = htons(pkt->question.qclass);
+        ((dns_response *)(pkt->data))->ttl = htons(first_rec->node->ttl);
+        ((dns_response *)(pkt->data))->rdata = first_rec->node->content;
+        ((dns_response *)(pkt->data))->rdlength = htons(strlen(first_rec->node->content));
+        pkt->header.nscount += 1;
     }
     return pkt;
 }
